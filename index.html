@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demokratie-Lernquiz</title>
+<style>
+:root{
+  --bg:#f3f1ea; --card:#ffffff; --ink:#1d2433; --muted:#667085; --line:#dcd8cc;
+  --accent:#2f5bd8; --accent-ink:#fff; --ok:#1c8a4b; --ok-bg:#e3f5ea; --bad:#c43a2f; --bad-bg:#fbe6e3; --track:#e4e0d4;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#141821; --card:#1e2430; --ink:#eef0f5; --muted:#9aa3b5; --line:#343c4d;
+  --accent:#7fa0ff; --accent-ink:#0f1320; --ok:#5fd08e; --ok-bg:#173524; --bad:#ff8a7d; --bad-bg:#40201d; --track:#2b3242;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.5rem;margin:8px 0 4px;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:20px 0 8px}
+p{margin:8px 0}
+.muted{color:var(--muted);font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:14px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{display:block;width:100%;padding:14px 16px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:650;margin-top:12px}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.chips{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.chip{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card)}
+.chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip .n{color:var(--muted);font-size:.85rem;white-space:nowrap}
+.chip .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;line-height:1}
+.chip[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip .lbl{flex:1}
+/* progress */
+.stats{position:sticky;top:0;background:var(--bg);padding:10px 0 8px;z-index:2}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.row b{color:var(--ink)}
+.bar{height:12px;background:var(--track);border-radius:99px;overflow:hidden;margin:6px 0 8px}
+.bar>i{display:block;height:100%;width:0;background:var(--ok);border-radius:99px;transition:width .35s}
+.bar.thin{height:6px;margin:4px 0 0}
+.bar.thin>i{background:var(--accent)}
+.topic{display:inline-block;font-size:.78rem;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.again{font-size:.8rem;color:var(--bad);margin-left:8px;font-weight:600}
+.q{font-size:1.2rem;font-weight:650;margin:6px 0 14px;line-height:1.3}
+.opt{display:block;width:100%;text-align:left;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);margin-top:9px;min-height:50px}
+.opt:not(:disabled):active{border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:.96rem}
+.fb.ok{background:var(--ok-bg)} .fb.no{background:var(--bad-bg)}
+.fb strong{display:block;margin-bottom:2px}
+.fb.ok strong{color:var(--ok)} .fb.no strong{color:var(--bad)}
+.big{font-size:2.6rem;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+ul.miss{padding-left:18px;margin:6px 0}
+ul.miss li{margin:8px 0}
+ul.miss span{color:var(--muted);display:block;font-size:.92rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <!-- START -->
+  <section id="start">
+    <h1>Demokratie-Lernquiz</h1>
+    <p class="muted">Jede Frage bleibt im Spiel, bis du sie richtig beantwortet hast. Falsche Antworten kommen nach ein paar Fragen wieder. Wenn der grüne Balken voll ist, kannst du alles.</p>
+    <h2>Themen auswählen</h2>
+    <div class="chips" id="chips"></div>
+    <button class="btn" id="go">Los geht's</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" hidden>
+    <div class="stats">
+      <div class="row"><span>Gekonnt: <b id="sMast">0</b> von <b id="sTot">0</b></span><span>Noch offen: <b id="sLeft">0</b></span></div>
+      <div class="bar" role="progressbar" aria-label="Fortschritt" aria-valuemin="0" aria-valuemax="100" id="pb"><i id="pbFill"></i></div>
+      <div class="row"><span>Richtige Antworten: <b id="sRight">0</b> von <b id="sAns">0</b></span><b id="sPct">–</b></div>
+      <div class="bar thin"><i id="pctFill"></i></div>
+    </div>
+    <div class="card">
+      <span class="topic" id="qTopic"></span><span class="again" id="qAgain" hidden>Wiederholung</span>
+      <div class="q" id="qText"></div>
+      <div id="opts"></div>
+      <div class="fb" id="fb" hidden></div>
+      <button class="btn" id="next" hidden>Weiter</button>
+    </div>
+    <button class="btn ghost" id="quit">Zur Themenauswahl</button>
+  </section>
+
+  <!-- END -->
+  <section id="end" hidden>
+    <h1 id="eTitle">Geschafft!</h1>
+    <div class="card">
+      <div class="big" id="ePct"></div>
+      <p id="eLine"></p>
+      <p class="muted" id="eSub"></p>
+    </div>
+    <div class="card" id="eMissCard">
+      <h2 style="margin-top:0">Das war anfangs noch wackelig</h2>
+      <ul class="miss" id="eMiss"></ul>
+    </div>
+    <button class="btn" id="reMiss">Nur die Wackelkandidaten üben</button>
+    <button class="btn ghost" id="reAll">Alles noch einmal</button>
+    <button class="btn ghost" id="reStart">Zur Themenauswahl</button>
+  </section>
+</main>
+
+<script>
+const TOPICS = {
+  A:"Was ist Demokratie?",
+  B:"Der Demokratie-Check",
+  C:"Demokratie in der Schule",
+  D:"Ursprünge: die Polis",
+  E:"Demokratie in Athen"
+};
+// [Thema, Frage, richtige Antwort, [falsche Antworten], Erklärung]
+const Q = [
+// A
+["A","Was bedeutet das Wort „Demokratie“?","Herrschaft des Volkes",["Herrschaft des Adels","Herrschaft eines Einzelnen","Herrschaft der Reichsten"],"Demokratie = Herrschaft des Volkes. Jeder hat die Möglichkeit mitzubestimmen."],
+["A","Aus welcher Sprache kommt das Wort „Demokratie“?","Griechisch",["Lateinisch","Englisch","Französisch"],"Demokratie ist griechisch und heißt: Herrschaft des Volkes."],
+["A","Welche drei Wahlgrundsätze gelten in einer Demokratie?","geheim, gleich, frei",["öffentlich, gleich, frei","geheim, schnell, frei","geheim, gleich, teuer"],"Wahlen sind geheim, gleich und frei."],
+["A","Was bedeutet „geheime Wahl“?","Niemand erfährt, wen ich gewählt habe.",["Nur wenige Menschen dürfen wählen.","Keiner weiß, wann die Wahl stattfindet.","Das Wahlergebnis wird nicht verraten."],"Geheim heißt: Man wählt unbeobachtet, niemand muss sagen, wen er gewählt hat."],
+["A","Was bedeutet „gleiche Wahl“?","Jede Stimme zählt gleich viel.",["Alle müssen dasselbe wählen.","Es gibt nur eine Partei.","Alle wählen am gleichen Ort."],"Gleich heißt: Keine Stimme ist mehr wert als eine andere."],
+["A","Menschen dürfen sich treffen und zum Beispiel demonstrieren. Wie heißt dieses Recht?","Versammlungsfreiheit",["Religionsfreiheit","Informationsfreiheit","Wahlfreiheit"],"Versammlungsfreiheit: Menschen dürfen sich versammeln."],
+["A","Jeder darf offen sagen, was er denkt. Wie heißt dieses Recht?","Freie Meinungsäußerung",["Versammlungsfreiheit","Religionsfreiheit","Wahlgeheimnis"],"Freie Meinungsäußerung gehört zu den wichtigsten Rechten in einer Demokratie."],
+["A","Was bedeutet Informationsfreiheit?","Menschen dürfen sich frei informieren.",["Nur die Regierung darf Nachrichten lesen.","Alle Informationen sind kostenlos.","Niemand muss in die Schule gehen."],"Informationsfreiheit: Menschen dürfen sich informieren, zum Beispiel über Zeitungen, Fernsehen oder das Internet."],
+["A","Was bedeutet Religionsfreiheit?","Jeder darf selbst entscheiden, woran er glaubt.",["Alle müssen dieselbe Religion haben.","Religion ist verboten.","Nur Politiker dürfen eine Religion haben."],"Religionsfreiheit: Jeder Mensch darf seinen Glauben frei wählen."],
+["A","Was passt NICHT zu einer Demokratie?","Eine Person bestimmt allein über alle.",["Alle haben die gleichen Rechte.","Niemand wird unterdrückt.","Es gibt freie, gleiche und geheime Wahlen."],"Wenn einer allein bestimmt, ist das eine Diktatur – keine Demokratie."],
+["A","Wer muss sich in einer Demokratie an die Gesetze halten?","Alle Menschen",["Nur die Menschen, die nicht gewählt haben","Nur die Politiker","Niemand, denn alle sind frei"],"Auch in einer Demokratie müssen sich die Menschen an Gesetze halten – und zwar alle."],
+// B
+["B","Wie nennt man Politiker noch?","Volksvertreter",["Regisseure","Volkswagen","Volksrichter"],"Politiker vertreten das Volk – deshalb heißen sie Volksvertreter."],
+["B","Wie heißt das Gesetzbuch, an das sich alle in Deutschland halten müssen?","Grundgesetz",["Manifest","Schulgesetz","Volksbuch"],"Das Grundgesetz gilt für alle in Deutschland."],
+["B","Wie heißt ein Alleinherrscher, der mit Gewalt regiert?","Diktator",["Direktor","Diktierer","Demokrat"],"Ein Diktator herrscht allein und mit Gewalt."],
+["B","Für welche Partei ist Jan Metzler im Film im Bundestag?","CDU",["SPD","Die Grünen","AfD"],"Jan Metzler ist Abgeordneter der CDU."],
+["B","Was bedeutet Wahlkampf?","Politiker versuchen, möglichst viele Menschen zu überzeugen, sie zu wählen.",["Politiker kämpfen im Bundestag gegeneinander.","Die Stimmen werden nach der Wahl gezählt.","Wähler streiten sich im Wahllokal."],"Im Wahlkampf werben Politikerinnen und Politiker um Stimmen für die nächste Wahl."],
+["B","Was gehört NICHT zu den Aufgaben von Abgeordneten?","die Landesgrenzen schützen",["über Gesetze debattieren","über Gesetze abstimmen, die für ganz Deutschland gelten","Bundeskanzler*in wählen"],"Abgeordnete debattieren und stimmen über Gesetze ab und wählen die Bundeskanzlerin oder den Bundeskanzler."],
+["B","Wer wählt die Bundeskanzlerin oder den Bundeskanzler?","die Abgeordneten im Bundestag",["der König","der Bundesrat allein","die Richter"],"Die Kanzlerwahl gehört zu den Aufgaben der Abgeordneten."],
+["B","Wie nennt man die kleinen Gruppen im Bundestag, in denen diskutiert wird?","Ausschüsse",["Ausschlüsse","Ausgüsse","Ausflüsse"],"In den Ausschüssen besprechen Abgeordnete Themen in kleiner Runde."],
+["B","Wer regiert in einer Monarchie?","König*in",["Bundeskanzler*in","das Volk","die Abgeordneten"],"Monarchie: An der Spitze steht ein König oder eine Königin."],
+["B","Wie wird verhindert, dass in Deutschland wieder eine Diktatur entsteht?","Die Macht ist verteilt: Jede regierende Person wird von anderen kontrolliert.",["Es gibt nur eine einzige Partei.","Die Bundeskanzlerin entscheidet alles allein.","Wahlen finden nur alle 20 Jahre statt."],"Die Gesetze sind so verfasst, dass nicht eine Person allein viel Macht hat."],
+["B","Kann die Bundeskanzlerin oder der Bundeskanzler allein Gesetze beschließen?","Nein, es braucht die Zustimmung von Bundestag, Bundesrat und Bundespräsident.",["Ja, das ist ihre wichtigste Aufgabe.","Ja, aber nur einmal im Jahr.","Nein, Gesetze beschließt das Scherbengericht."],"Bundestag, Bundesrat und Bundespräsident müssen zustimmen – so kontrollieren sich alle gegenseitig."],
+// C
+["C","Wo wird der Klassensprecher gewählt?","im Klassenrat",["im Schülerparlament","im Bundestag","im Lehrerzimmer"],"Die Wahl des Klassensprechers gehört zum Klassenrat."],
+["C","Wo wird die Schulsprecherin oder der Schulsprecher gewählt?","im Schülerparlament",["im Klassenrat","im Ausschuss","in der Volksversammlung"],"Das Schülerparlament wählt die Schulsprecher:in."],
+["C","Wer leitet den Klassenrat?","die Kinder",["die Schulleitung","die Eltern","der Hausmeister"],"Im Klassenrat übernehmen Kinder die Leitung."],
+["C","Wer sitzt im Schülerparlament?","Vertreter aus den Klassen",["alle Lehrerinnen und Lehrer","nur die Schulleitung","alle Eltern"],"Jede Klasse schickt Vertreter ins Schülerparlament."],
+["C","Woher kommen viele Themen im Schülerparlament?","aus den Klassenräten",["aus dem Bundestag","aus der Zeitung","vom Bürgermeister"],"Die Vertreter bringen Themen aus den Klassenräten ein."],
+["C","Was gehört zum Klassenrat?","Wahl des Kinds der Woche",["Schulsprecher:in wählen","Vertreter aus allen Klassen treffen sich","Gesetze für Deutschland beschließen"],"Im Klassenrat wird zum Beispiel das Kind der Woche gewählt."],
+["C","Was ist eine Aufgabe des Schülerparlaments?","Vorschläge zur Gestaltung der Schule machen",["das Kind der Woche wählen","Noten vergeben","den Stundenplan schreiben"],"Das Schülerparlament macht Vorschläge für die Schule und gestaltet Veranstaltungen mit."],
+["C","Welche demokratische Eigenschaft haben Klassenrat UND Schülerparlament?","freie Meinungsäußerung",["Wahl des Kinds der Woche","Schulsprecher:in wählen","Kanzlerwahl"],"In beiden darf jeder seine Meinung sagen – im Schülerparlament auch kritisch."],
+["C","Was sorgt im Klassenrat dafür, dass es fair zugeht?","Gesprächsregeln",["Hausaufgaben","Noten","Strafarbeiten"],"Der Klassenrat hat Gesprächsregeln."],
+["C","Was dürfen die Kinder im Klassenrat außer wählen noch tun?","Themen vorschlagen",["Lehrer entlassen","Ferien festlegen","Zeugnisse schreiben"],"Im Klassenrat können Kinder eigene Themen vorschlagen und darüber abstimmen."],
+// D
+["D","Was ist eine Polis?","eine griechische Stadt",["ein griechischer Tempel","ein Schiff","ein Gesetz"],"Die griechischen Städte heißen Poleis – eine davon ist eine Polis."],
+["D","Wie lautet die Mehrzahl von Polis?","Poleis",["Polisse","Polizei","Polen"],"Eine Polis, viele Poleis."],
+["D","Was bedeutet der Vergleich „Frösche um den Teich“?","Die griechischen Städte lagen an der Küste des Mittelmeers.",["In Griechenland gab es besonders viele Frösche.","Die Griechen wohnten an kleinen Seen.","Die Städte lagen alle im Gebirge."],"Die Poleis lagen rund um das Mittelmeer – so wie Frösche am Teich sitzen."],
+["D","Wofür steht der „Teich“ im Vergleich „Frösche um den Teich“?","für das Mittelmeer",["für die Akropolis","für den Hafen von Athen","für die Volksversammlung"],"Teich = Mittelmeer, Frösche = die griechischen Städte."],
+["D","Was trennte die griechischen Städte voneinander?","natürliche Grenzen wie Meer und Gebirge",["hohe Mauern aus Stein","verschiedene Sprachen","verschiedene Religionen"],"Meer und Gebirge trennten die Städte voneinander."],
+["D","Was hatten die griechischen Städte gemeinsam?","Sprache, Schrift, Religion und Feste",["denselben König","dieselben Gesetze","dieselbe Armee"],"Sie sprachen die gleiche Sprache, schrieben dieselbe Schrift, hatten die gleiche Religion und feierten die gleichen Feste."],
+["D","Was befand sich im Zentrum einer Polis?","Tempel und Versammlungsplatz",["Felder und Siedlungen","der Hafen","das Gebirge"],"Im Zentrum: Tempel und Versammlungsplatz. Um die Stadt lagen Felder und Siedlungen."],
+["D","Wo lag die Stadt auf dem Bild der Polis?","auf einem Hügel",["in einem Tal","auf einer Insel im See","mitten im Wald"],"Die Stadt liegt auf einem Hügel. Diese Lage war günstig für die Verteidigung."],
+["D","Wofür war die Lage der Polis günstig?","für die Verteidigung",["für den Wintersport","für die Jagd auf Frösche","für den Bergbau"],"Die Lage der Stadt machte es leichter, sich zu verteidigen."],
+["D","Was lag rund um die Stadt?","Felder und Siedlungen",["Tempel und Versammlungsplatz","Wüste","nichts als Wald"],"Um die Stadt liegen Felder und Siedlungen, außerdem gibt es einen Hafen."],
+["D","Was ist eine Tyrannei?","die Herrschaft eines Einzelnen",["die Herrschaft des Volkes","die Herrschaft der Stärksten, Klügsten und Reichsten","die Herrschaft der Priester"],"Tyrannei (Diktatur): Ein Einzelner herrscht."],
+["D","Was ist eine Aristokratie?","die Herrschaft der Stärksten, Klügsten und Reichsten",["die Herrschaft eines Einzelnen","die Herrschaft des Volkes","die Herrschaft der Bauern"],"In der Aristokratie herrschen die Adeligen."],
+["D","In welcher Herrschaftsform bestimmt das Volk?","Demokratie",["Tyrannei","Aristokratie","Monarchie"],"Demokratie = Herrschaft des Volkes."],
+// E
+["E","Wer herrschte um 700 v. Chr. in Athen?","eine Gruppe von Adeligen",["das ganze Volk","ein König aus Sparta","die Fischer"],"Die Adeligen besaßen den größten Teil des Landes und hatten die Macht."],
+["E","Woraus bestand die Mehrheit der Bevölkerung in Athen?","Bauern, Fischer und Handwerker",["Adelige","Richter","Soldaten"],"Die meisten Athener waren Bauern, Fischer und Handwerker – sie hatten kaum Rechte."],
+["E","Warum waren viele Athener mit der Herrschaft der Adeligen unzufrieden?","Sie hatten kaum Rechte, waren arm und die Richter waren bestechlich.",["Sie mussten zu oft wählen gehen.","Die Adeligen wollten das Land verlassen.","Es gab zu viele Feste."],"Armut, kaum Rechte und ungerechte Richter führten zu Unruhen."],
+["E","Warum verschuldeten sich die Bauern?","Sie liehen sich Geld von den Adeligen, um die Pacht für Äcker und Felder zu bezahlen.",["Sie kauften teure Schiffe.","Sie bauten Tempel.","Sie bezahlten die Richter."],"Für die Pacht mussten die Bauern immer mehr Geld von den Adeligen leihen."],
+["E","Wie urteilten die Richter aus dem Adel?","bestechlich und willkürlich",["immer gerecht","gar nicht","nur nach dem Grundgesetz"],"Die Richter kamen aus dem Adel, waren bestechlich und urteilten mit großer Willkür."],
+["E","Was drohte in Athen wegen der Unruhen?","ein Bürgerkrieg",["eine Hungersnot","ein Erdbeben","ein Krieg gegen Rom"],"Die Unzufriedenheit war so groß, dass ein Bürgerkrieg drohte."],
+["E","Wer sollte den Streit in Athen schlichten?","Solon",["Perikles","Checker Tobi","Alexander der Große"],"Die Adeligen baten den Staatsmann Solon, zwischen den Streitenden zu vermitteln."],
+["E","In welchem Jahr vermittelte Solon in Athen?","594 v. Chr.",["700 v. Chr.","594 n. Chr.","1949"],"594 v. Chr. – etwa hundert Jahre nach dem Beginn der Adelsherrschaft um 700 v. Chr."],
+["E","Was tat Solon als Erstes?","Er sorgte dafür, dass den Bauern die Schulden erlassen wurden.",["Er vertrieb alle Adeligen.","Er machte sich selbst zum König.","Er schaffte die Volksversammlung ab."],"Durch den Schuldenerlass war die Gefahr des Bürgerkriegs gebannt."],
+["E","In wie viele Klassen teilte Solon das Volk ein?","vier",["zwei","drei","zehn"],"Vier Klassen – von den reichen Grundbesitzern bis zu den armen Fischern und Bauern."],
+["E","Wer gehörte zur ersten Klasse?","reiche Grundbesitzer",["Kaufleute und Händler","reiche Bauern und Handwerker","arme Fischer und Bauern"],"Die erste Klasse konnte die höchsten Ämter besetzen."],
+["E","Was mussten die Bürger der ersten Klasse tun?","einen Großteil ihres Geldes für das Gemeinwohl ausgeben",["als Fußsoldaten kämpfen","die Stadt für zehn Jahre verlassen","auf den Feldern arbeiten"],"Hohe Ämter – aber auch die Pflicht, viel Geld für die Gemeinschaft auszugeben."],
+["E","Wer gehörte zur zweiten Klasse?","Kaufleute und Händler",["reiche Grundbesitzer","arme Fischer und Bauern","reiche Bauern und Handwerker"],"Die zweite Klasse konnte mittlere Beamte stellen."],
+["E","Wie kämpfte die zweite Klasse im Krieg?","als Reiter",["als Fußsoldaten","gar nicht","als Ruderer"],"Kaufleute und Händler mussten im Kriegsfall als Reiter kämpfen."],
+["E","Wer gehörte zur dritten Klasse?","reiche Bauern und Handwerker",["Kaufleute und Händler","arme Fischer und Bauern","reiche Grundbesitzer"],"Die dritte Klasse konnte niedere Beamte stellen und kämpfte als Fußsoldaten."],
+["E","Was durfte die vierte Klasse (arme Fischer und Bauern)?","an der Volksversammlung teilnehmen",["die höchsten Ämter besetzen","mittlere Beamte werden","Richter des Adels werden"],"Sie durften kein Amt ausüben, aber an der Volksversammlung teilnehmen. Kämpfen mussten sie trotzdem."],
+["E","Was galt für die Ämter der Beamten in Athen?","Sie waren zeitlich begrenzt und mussten wieder abgegeben werden.",["Man behielt sie ein Leben lang.","Man konnte sie vererben.","Man konnte sie kaufen."],"Ein Amt musste nach einer gewissen Zeit wieder abgegeben werden."],
+["E","Wo traf sich die Volksversammlung?","in der Nähe der Akropolis",["im Hafen","im Bundestag","auf den Feldern"],"Mehrere Tausend Bürger kamen in der Nähe der Akropolis zusammen."],
+["E","Welche Aufgabe hatte die Volksversammlung?","über die wichtigsten Themen der Stadt diskutieren",["die Äcker verpachten","Schulden eintreiben","Tempel bauen"],"In der Volksversammlung wurde öffentlich über alles Wichtige für die Stadt gestritten und diskutiert."],
+["E","Wer sprach in der Volksversammlung meistens?","große Redner und gebildete Bürger",["arme Bauern","nur die Richter","nur Solon"],"Armen Bauern fehlte oft der Mut, vor so vielen Menschen zu sprechen."],
+["E","Wen löste das Volksgericht ab?","die bestechlichen Richter des Adels",["die Volksversammlung","die Beamten der zweiten Klasse","das Scherbengericht"],"Statt der Adelsrichter gab es nun ein Volksgericht."],
+["E","Wer wählte Volksversammlung und Volksgericht?","die Mitglieder der vier Klassen",["nur die Adeligen","nur die erste Klasse","Solon allein"],"Alle vier Klassen wählten mit."],
+["E","Warum heißt die Verfassung laut Perikles „Volksherrschaft“?","weil sie auf den Vorstellungen der Mehrheit beruht",["weil der Adel sie geschrieben hat","weil ein König sie erlaubt hat","weil nur Reiche abstimmen dürfen"],"Perikles: nicht der Adel, sondern die Mehrheit bestimmt."],
+["E","Wozu diente das Scherbengericht?","um ungeliebte Politiker abzusetzen",["um Diebe zu bestrafen","um Steuern festzulegen","um den Klassensprecher zu wählen"],"Die Männer der Volksversammlung ritzten einen Namen in eine Tonscherbe."],
+["E","Was passierte mit dem Politiker, dessen Name beim Scherbengericht am häufigsten genannt wurde?","Er musste die Stadt für zehn Jahre verlassen.",["Er wurde König.","Er musste alle Schulden bezahlen.","Er kam in die vierte Klasse."],"Zehn Jahre Verbannung. Das Scherbengericht fand einmal im Jahr statt."],
+["E","Welche Reihenfolge stimmt?","Adelsherrschaft → Unruhen → Solon vermittelt → Volksversammlung",["Volksversammlung → Solon vermittelt → Adelsherrschaft → Unruhen","Solon vermittelt → Adelsherrschaft → Volksversammlung → Unruhen","Unruhen → Volksversammlung → Adelsherrschaft → Solon vermittelt"],"Um 700 v. Chr. herrscht der Adel, es kommt zu Unruhen, 594 v. Chr. vermittelt Solon, danach trifft sich die Volksversammlung."]
+];
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const show = id => ["start","quiz","end"].forEach(s => $(s).hidden = s!==id);
+
+let sel = new Set(Object.keys(TOPICS));
+let pool=[], queue=[], total=0, mastered=0, answers=0, right=0, missed=new Set(), cur=null;
+
+function renderChips(){
+  const c=$("chips"); c.innerHTML="";
+  for(const k in TOPICS){
+    const n=Q.filter(q=>q[0]===k).length;
+    const b=document.createElement("button");
+    b.className="chip"; b.setAttribute("aria-pressed", sel.has(k));
+    b.innerHTML='<span class="box">'+(sel.has(k)?"✓":"")+'</span><span class="lbl"></span><span class="n">'+n+' Fragen</span>';
+    b.querySelector(".lbl").textContent=TOPICS[k];
+    b.onclick=()=>{ sel.has(k)?sel.delete(k):sel.add(k); renderChips(); };
+    c.appendChild(b);
+  }
+  const cnt=Q.filter(q=>sel.has(q[0])).length;
+  $("go").disabled=cnt===0;
+  $("go").textContent=cnt? "Los geht's – "+cnt+" Fragen" : "Bitte ein Thema wählen";
+}
+
+function begin(indices){
+  pool=indices.slice(); queue=shuffle(indices.slice());
+  total=queue.length; mastered=0; answers=0; right=0; missed=new Set();
+  show("quiz"); nextQ();
+}
+
+function stats(){
+  $("sMast").textContent=mastered; $("sTot").textContent=total; $("sLeft").textContent=total-mastered;
+  const p=total?Math.round(mastered/total*100):0;
+  $("pbFill").style.width=p+"%"; $("pb").setAttribute("aria-valuenow",p);
+  $("sRight").textContent=right; $("sAns").textContent=answers;
+  const r=answers?Math.round(right/answers*100):0;
+  $("sPct").textContent=answers? r+" %":"–"; $("pctFill").style.width=r+"%";
+}
+
+function nextQ(){
+  stats();
+  if(!queue.length) return finish();
+  cur=queue.shift();
+  const q=Q[cur];
+  $("qTopic").textContent=TOPICS[q[0]];
+  $("qAgain").hidden=!missed.has(cur);
+  $("qText").textContent=q[1];
+  $("fb").hidden=true; $("next").hidden=true;
+  const box=$("opts"); box.innerHTML="";
+  shuffle([q[2],...q[3]]).forEach(t=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.textContent=t;
+    b.onclick=()=>answer(b,t);
+    box.appendChild(b);
+  });
+  window.scrollTo(0,0);
+}
+
+function answer(btn,text){
+  const q=Q[cur], ok=text===q[2];
+  answers++;
+  document.querySelectorAll(".opt").forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q[2]) b.classList.add("right");
+  });
+  const fb=$("fb");
+  if(ok){
+    right++; mastered++;
+    fb.className="fb ok";
+    fb.innerHTML="<strong>Richtig!</strong>";
+  }else{
+    btn.classList.add("wrong");
+    missed.add(cur);
+    queue.splice(Math.min(queue.length, 3+Math.floor(Math.random()*3)),0,cur);
+    fb.className="fb no";
+    fb.innerHTML="<strong>Noch nicht ganz – die Frage kommt gleich wieder.</strong>";
+  }
+  fb.appendChild(document.createTextNode(q[4]));
+  fb.hidden=false;
+  $("next").textContent=queue.length?"Weiter":"Ergebnis ansehen";
+  $("next").hidden=false;
+  stats();
+  $("next").scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+function finish(){
+  const r=answers?Math.round(right/answers*100):0;
+  $("ePct").textContent=r+" %";
+  $("eLine").textContent="Du hast alle "+total+" Fragen richtig beantwortet – mit "+answers+" Antworten insgesamt.";
+  const m=[...missed];
+  $("eTitle").textContent=m.length? "Geschafft – jetzt sitzt alles!" : "Perfekt! Alles auf Anhieb richtig!";
+  $("eSub").textContent=m.length? m.length+" Fragen hast du erst im zweiten Anlauf geschafft. Übe die noch einmal, bis sie beim ersten Mal klappen."
+                                 : "Du bist bereit für die Klassenarbeit.";
+  $("eMissCard").hidden=!m.length; $("reMiss").hidden=!m.length;
+  const ul=$("eMiss"); ul.innerHTML="";
+  m.forEach(i=>{
+    const li=document.createElement("li"); li.textContent=Q[i][1];
+    const s=document.createElement("span"); s.textContent="→ "+Q[i][2];
+    li.appendChild(s); ul.appendChild(li);
+  });
+  const lastMissed=m;
+  $("reMiss").onclick=()=>begin(lastMissed);
+  show("end"); window.scrollTo(0,0);
+}
+
+$("go").onclick=()=>begin(Q.map((q,i)=>i).filter(i=>sel.has(Q[i][0])));
+$("next").onclick=nextQ;
+$("quit").onclick=()=>{show("start");renderChips();};
+$("reAll").onclick=()=>begin(pool);
+$("reStart").onclick=()=>{show("start");renderChips();};
+renderChips();
+</script>
+</body>
+</html>
